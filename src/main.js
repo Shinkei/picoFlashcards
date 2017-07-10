@@ -33,13 +33,13 @@ function Component (_parent) {
       oldNode,
       oldNode = newNode
     );
-  };     
+  };
 }
 
 //--------------------------------------------
 
 const store = (function(){
-    
+
   function createCard (q, a){
     if (typeof q !== 'string' || typeof a !== 'string') {
       return;
@@ -55,17 +55,20 @@ const store = (function(){
   const reducerCards = (state=cards, action) => {
     switch (action.type) {
       case 'ADD_CARD':
-        const newCard = createCard(action.question, action.answer)
+        const newCard = createCard(action.question, action.answer);
         return [newCard].concat(state); // card se convierte a un arreglo y se agrega los anteriores al final 
       case 'OPEN':
         const currentCard = state[action.index];
         state.splice(action.index, 1, Object.assign({}, currentCard, {open: true}));
         return state;
+      case 'CLOSE':
+        const currentCard2 = state[action.index];
+        state.splice(action.index, 1, Object.assign({}, currentCard2, {open: false}));
       default:
         return state;
     }
   }
-  
+
   const nav = {
     positions: [],
     index: 0,
@@ -89,14 +92,12 @@ const store = (function(){
         const newCount = state.cardCount + 1;
         return Object.assign({}, state, {cardCount: newCount});
       default:
-        return state
+        return state;
     }
   }
 
   return Redux.createStore(Redux.combineReducers({nav: reducerNav, cards: reducerCards}));
 }())
-
-
 
 //----------------------------------------------
 const container = document.getElementById('content');
@@ -114,6 +115,11 @@ const showAnswer = () => {
   store.dispatch({type: 'OPEN', index: index});
 }
 
+const showQuestion = () => {
+  const {index} = store.getState().nav;
+  store.dispatch({type: 'CLOSE', index: index});
+}
+
 const nextCard = () => {
   store.dispatch({type: 'NEXT_CARD'});
 }
@@ -121,9 +127,8 @@ const nextCard = () => {
 const card = h('div', null, [
   h('div', {id:'question'}),
   h('div', {id:'answer'}),
-  h('button',{onclick: showAnswer} , 'view Answer')
+  h('div', {id:'showQA'})
 ]);
-
 
 const studyMode = h('div', null, [
   h('div', {class: 'nav-container'}, [
@@ -137,41 +142,41 @@ const studyMode = h('div', null, [
 
 modeContainer.render(studyMode);
 
-
 const cardCount = new Component(document.getElementById('cardCount'));
 const indexCard = new Component(document.getElementById('indexCard'));
 const nextButton = new Component(document.getElementById('nextButton'));
 const questionE = new Component(document.getElementById('question'));
 const answerE = new Component(document.getElementById('answer'));
-
+const buttonShowQA = new Component(document.getElementById('showQA'));
 //----------------------------------------------
 
 store.subscribe(() => {
 //   debugger;
-  const {cards, nav} = store.getState()
+  const {cards, nav} = store.getState();
   cardCount.render(h('span', null, nav.cardCount));
   indexCard.render(h('span', null, 1 + nav.index));
   nextButton.render(h('button', {disabled: !nav.hasNext, onclick: nextCard}, 'next'));
   const {question, answer, open} = cards[nav.index];
   questionE.render(h('span', {class: open && 'hidden' }, question));
   answerE.render(h('span',{class: open || 'hidden'}, answer));
-})
-
+  if(open){
+    buttonShowQA.render(h('button',{id: 'showQuestion', onclick: showQuestion} , 'view Question'));
+  }else{
+    buttonShowQA.render(h('button',{id: 'showAnswer',  onclick: showAnswer}, 'view Answer'));
+  }
+});
 
 store.dispatch({
-  question: 'a?',
-  answer: 'a´',
+  question: 'qustion a?',
+  answer: 'answer a´',
   type: 'ADD_CARD'
 });
 
 store.dispatch({
-  question: 'b?',
-  answer: 'b´',
+  question: 'question b?',
+  answer: 'answer b´',
   type: 'ADD_CARD'
 });
 
 store.dispatch({type: 'START'});
 // store.dispatch({type: 'NEXT_CARD'});
-
-
-
